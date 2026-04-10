@@ -1,9 +1,6 @@
 """AIサービス テスト（ルールベース分類 + 週報フォールバック）"""
 
-import pytest
-
 from app.services.ai_service import _classify_by_rules, ai_service
-
 
 # ---- ルールベース分類テスト ----
 
@@ -71,3 +68,86 @@ async def test_weekly_report_fallback_empty_logs():
     result = await ai_service.generate_weekly_report([], "2026-W15")
     assert result["this_week"] == "該当週の活動記録がありません。"
     assert "記録" in result["next_week"]
+
+
+# ---- classify_idea フォールバックテスト ----
+
+
+async def test_classify_idea_fallback_basic():
+    """Gemini無しでタイトルからタグを抽出"""
+    tags = await ai_service.classify_idea("新しい実験手法の提案", "実験手法について")
+    assert isinstance(tags, list)
+    assert len(tags) >= 1
+    assert len(tags) <= 4
+
+
+async def test_classify_idea_fallback_english():
+    """英語のタイトルでもタグが返る"""
+    tags = await ai_service.classify_idea("Deep Learning approach", "Neural network method")
+    assert isinstance(tags, list)
+    assert len(tags) >= 1
+
+
+async def test_classify_idea_fallback_short_title():
+    """短いタイトルでもタグが返る（1単語）"""
+    tags = await ai_service.classify_idea("AI", "")
+    assert isinstance(tags, list)
+    assert len(tags) >= 1
+
+
+async def test_classify_idea_fallback_empty_title():
+    """空タイトルの場合は 'その他' が返る"""
+    tags = await ai_service.classify_idea("", "")
+    assert isinstance(tags, list)
+    assert len(tags) >= 1
+
+
+# ---- generate_suggestion フォールバックテスト ----
+
+
+async def test_generate_suggestion_no_logs():
+    """ログ0件のフォールバック: 活動記録を促すメッセージ"""
+    data = {
+        "this_week_log_count": 0,
+        "category_counts": {},
+        "idea_total": 0,
+    }
+    result = await ai_service.generate_suggestion(data)
+    assert isinstance(result, str)
+    assert "活動記録" in result or "記録" in result
+
+
+async def test_generate_suggestion_no_paper():
+    """論文読みが無い場合のフォールバック"""
+    data = {
+        "this_week_log_count": 3,
+        "category_counts": {"実験": 2, "コーディング": 1},
+        "idea_total": 5,
+    }
+    result = await ai_service.generate_suggestion(data)
+    assert isinstance(result, str)
+    assert "論文" in result
+
+
+async def test_generate_suggestion_no_experiment():
+    """実験が無い場合のフォールバック"""
+    data = {
+        "this_week_log_count": 2,
+        "category_counts": {"論文読み": 2},
+        "idea_total": 3,
+    }
+    result = await ai_service.generate_suggestion(data)
+    assert isinstance(result, str)
+    assert "実験" in result
+
+
+async def test_generate_suggestion_balanced():
+    """バランス良い場合のフォールバック"""
+    data = {
+        "this_week_log_count": 4,
+        "category_counts": {"実験": 2, "論文読み": 1, "コーディング": 1},
+        "idea_total": 5,
+    }
+    result = await ai_service.generate_suggestion(data)
+    assert isinstance(result, str)
+    assert "バランス" in result or "調子" in result

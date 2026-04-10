@@ -41,4 +41,5 @@ async def get_dashboard_summary(
             for w in dashboard_data["weekly_trend"]
         ],
         "aiSuggestion": suggestion,
+        "latestReport": latest_report,
     }

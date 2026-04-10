@@ -28,3 +28,7 @@ Thumbs.db
 # Firebase
 firebase-debug.log
 .firebase/
+
+# Internal docs
+CLAUDE.md
+研究タスク管理AI_設計書.md

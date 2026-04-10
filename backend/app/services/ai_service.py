@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "実験": ["実験", "測定", "データ", "結果", "解析", "分析", "モデル", "学習", "訓練", "評価"],
     "論文読み": ["論文", "読んだ", "サーベイ", "レビュー", "文献", "先行研究", "調査"],
-    "コーディング": ["コード", "実装", "プログラム", "バグ", "デバッグ", "リファクタ", "開発", "コーディング"],
+    "コーディング": [
+        "コード", "実装", "プログラム", "バグ", "デバッグ", "リファクタ", "開発", "コーディング",
+    ],
     "ミーティング": ["ミーティング", "MTG", "打ち合わせ", "相談", "議論", "発表", "ゼミ", "会議"],
     "執筆": ["執筆", "書いた", "論文作成", "ドラフト", "原稿", "投稿", "修正"],
 }
@@ -57,7 +59,7 @@ class AIService:
             try:
                 import google.generativeai as genai
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel("gemini-pro")
+                self.model = genai.GenerativeModel("gemini-2.0-flash-lite")
                 logger.info("Gemini API initialized successfully")
             except Exception as e:
                 logger.warning("Failed to initialize Gemini API: %s", e)
@@ -116,7 +118,10 @@ class AIService:
             dict: {"this_week": str, "next_week": str}
         """
         if not logs:
-            return {"this_week": "該当週の活動記録がありません。", "next_week": "- 活動を記録してください"}
+            return {
+                "this_week": "該当週の活動記録がありません。",
+                "next_week": "- 活動を記録してください",
+            }
 
         # Gemini API が使える場合
         if self.model:
@@ -129,7 +134,8 @@ class AIService:
                 "これらの活動を元に週報を作成してください。\n"
                 "【今週の成果】カテゴリごとにまとめて記述\n"
                 "【来週の予定】今週の進捗を踏まえた次のアクション\n"
-                '【出力形式】JSON: {{"this_week": "今週の成果テキスト", "next_week": "来週の予定テキスト"}}'
+                '【出力形式】JSON: {{"this_week": "今週の成果テキスト", '
+                '"next_week": "来週の予定テキスト"}}'
             )
             try:
                 response = await self.model.generate_content_async(prompt)
@@ -176,7 +182,11 @@ class AIService:
 
         # Gemini API が使える場合
         if self.model:
-            idea_text = f"タイトル: {idea.get('title', '')}\n説明: {idea.get('description', '')}\nタグ: {', '.join(idea.get('tags', []))}"
+            idea_text = (
+                f"タイトル: {idea.get('title', '')}\n"
+                f"説明: {idea.get('description', '')}\n"
+                f"タグ: {', '.join(idea.get('tags', []))}"
+            )
             others_text = "\n".join(
                 f"ID:{a['id']} タイトル:{a.get('title','')} タグ:{','.join(a.get('tags',[]))}"
                 for a in others[:20]
@@ -224,8 +234,6 @@ class AIService:
         Returns:
             list[str]: 自動抽出されたタグ（2〜4個）
         """
-        text = f"{title} {description}"
-
         if self.model:
             prompt = (
                 "以下の研究アイデアから重要なキーワードタグを2〜4個抽出してください。\n"

@@ -61,8 +61,6 @@ async def test_update_log(client):
     """PUT /api/logs/{id} - 日報を編集すると再分類される"""
     create_resp = await client.post("/api/logs", json={"content": "今日は実験データの解析を行った"})
     log_id = create_resp.json()["id"]
-    old_category = create_resp.json()["category"]
-
     # コーディング系のcontentに変更
     resp = await client.put(f"/api/logs/{log_id}", json={"content": "コードをリファクタリングした"})
     assert resp.status_code == 200

@@ -1,9 +1,10 @@
 """週報API テスト"""
 
+from datetime import datetime, timezone
+
 import pytest
 
-from app.services.firestore_service import firestore_service, _calc_week_of
-from datetime import datetime, timezone
+from app.services.firestore_service import _calc_week_of
 
 pytestmark = pytest.mark.asyncio(loop_scope="function")
 
