@@ -32,11 +32,6 @@ class IdeaCreate(BaseModel):
 
     title: str = Field(..., description="タイトル")
     description: str = Field(default="", description="説明")
-    tags: list[str] = Field(default_factory=list, description="タグ一覧")
-    status: IdeaStatus = Field(default=IdeaStatus.NOT_STARTED, description="ステータス")
-    related_ideas: list[str] = Field(
-        default_factory=list, description="関連アイデアのID一覧"
-    )
 
 
 class IdeaUpdate(BaseModel):
