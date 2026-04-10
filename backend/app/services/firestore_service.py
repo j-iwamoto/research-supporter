@@ -29,6 +29,10 @@ class FirestoreService:
         # --- 開発用: インメモリストレージ ---
         # key: log_id, value: dict
         self._logs: dict[str, dict] = {}
+        # key: "{user_id}:{week_of}", value: dict
+        self._weekly_reports: dict[str, dict] = {}
+        # key: idea_id, value: dict
+        self._ideas: dict[str, dict] = {}
 
     # ---- Logs ----
 
@@ -167,39 +171,163 @@ class FirestoreService:
 
     async def create_idea(self, user_id: str, data: dict) -> dict:
         """アイデアを作成する"""
-        raise NotImplementedError
+        now = datetime.now(timezone.utc)
+        idea_id = str(uuid.uuid4())
+        doc: dict = {
+            "id": idea_id,
+            "user_id": user_id,
+            "title": data["title"],
+            "description": data.get("description", ""),
+            "tags": data.get("tags", []),
+            "status": data.get("status", "未着手"),
+            "related_ideas": data.get("related_ideas", []),
+            "created_at": now,
+            "updated_at": now,
+        }
+        self._ideas[idea_id] = doc
+        return doc
 
     async def get_ideas(
         self, user_id: str, status: str | None = None, tag: str | None = None
     ) -> list[dict]:
         """アイデア一覧を取得する"""
-        raise NotImplementedError
+        results = [
+            idea for idea in self._ideas.values()
+            if idea["user_id"] == user_id
+        ]
+        if status:
+            results = [idea for idea in results if idea["status"] == status]
+        if tag:
+            results = [idea for idea in results if tag in idea.get("tags", [])]
+        results.sort(key=lambda x: x["created_at"], reverse=True)
+        return results
 
     async def get_idea(self, user_id: str, idea_id: str) -> dict | None:
         """アイデアを1件取得する"""
-        raise NotImplementedError
+        doc = self._ideas.get(idea_id)
+        if doc is None or doc["user_id"] != user_id:
+            return None
+        return doc
 
-    async def update_idea(self, user_id: str, idea_id: str, data: dict) -> dict:
-        """アイデアを更新する"""
-        raise NotImplementedError
+    async def update_idea(self, user_id: str, idea_id: str, data: dict) -> dict | None:
+        """アイデアを更新する（部分更新）"""
+        doc = self._ideas.get(idea_id)
+        if doc is None or doc["user_id"] != user_id:
+            return None
+        for key, value in data.items():
+            if value is not None:
+                doc[key] = value
+        doc["updated_at"] = datetime.now(timezone.utc)
+        return doc
 
     async def delete_idea(self, user_id: str, idea_id: str) -> bool:
         """アイデアを削除する"""
-        raise NotImplementedError
+        doc = self._ideas.get(idea_id)
+        if doc is None or doc["user_id"] != user_id:
+            return False
+        del self._ideas[idea_id]
+        return True
 
     # ---- Weekly Reports ----
 
     async def save_weekly_report(self, user_id: str, data: dict) -> dict:
-        """週報を保存する (作成 or 上書き)"""
-        raise NotImplementedError
+        """週報を保存する (作成 or 上書き / upsert)"""
+        week_of = data["week_of"]
+        key = f"{user_id}:{week_of}"
+        now = datetime.now(timezone.utc)
+
+        existing = self._weekly_reports.get(key)
+        if existing:
+            existing["this_week"] = data.get("this_week", existing["this_week"])
+            existing["next_week"] = data.get("next_week", existing["next_week"])
+            existing["generated_at"] = now
+            return existing
+        else:
+            report_id = str(uuid.uuid4())
+            doc: dict = {
+                "id": report_id,
+                "user_id": user_id,
+                "week_of": week_of,
+                "this_week": data.get("this_week", ""),
+                "next_week": data.get("next_week", ""),
+                "generated_at": now,
+                "edited_at": None,
+            }
+            self._weekly_reports[key] = doc
+            return doc
 
     async def get_weekly_report(self, user_id: str, week_of: str) -> dict | None:
         """指定週の週報を取得する"""
-        raise NotImplementedError
+        key = f"{user_id}:{week_of}"
+        return self._weekly_reports.get(key)
 
-    async def update_weekly_report(self, user_id: str, week_of: str, data: dict) -> dict:
-        """週報を更新する"""
-        raise NotImplementedError
+    async def update_weekly_report(self, user_id: str, week_of: str, data: dict) -> dict | None:
+        """週報を更新する（部分更新）"""
+        key = f"{user_id}:{week_of}"
+        doc = self._weekly_reports.get(key)
+        if doc is None:
+            return None
+        if data.get("this_week") is not None:
+            doc["this_week"] = data["this_week"]
+        if data.get("next_week") is not None:
+            doc["next_week"] = data["next_week"]
+        doc["edited_at"] = datetime.now(timezone.utc)
+        return doc
+
+    async def get_weekly_reports(self, user_id: str) -> list[dict]:
+        """ユーザーの全週報を取得する（week_of降順）"""
+        results = [
+            report for report in self._weekly_reports.values()
+            if report["user_id"] == user_id
+        ]
+        results.sort(key=lambda x: x["week_of"], reverse=True)
+        return results
+
+    # ---- Dashboard ----
+
+    async def get_dashboard_data(self, user_id: str) -> dict:
+        """ダッシュボード用の集計データを取得する"""
+        now = datetime.now(timezone.utc)
+        current_week = _calc_week_of(now)
+
+        # 今週のログ
+        all_logs = [log for log in self._logs.values() if log["user_id"] == user_id]
+        this_week_logs = [log for log in all_logs if log["week_of"] == current_week]
+
+        # カテゴリ別カウント
+        category_counts: dict[str, int] = {}
+        for log in this_week_logs:
+            cat = log.get("category", "その他")
+            category_counts[cat] = category_counts.get(cat, 0) + 1
+
+        # アイデア統計
+        all_ideas = [idea for idea in self._ideas.values() if idea["user_id"] == user_id]
+        status_counts: dict[str, int] = {}
+        for idea in all_ideas:
+            s = idea.get("status", "未着手")
+            status_counts[s] = status_counts.get(s, 0) + 1
+
+        # 過去4週間のトレンド
+        iso_cal = now.isocalendar()
+        weekly_trend: list[dict] = []
+        for i in range(4):
+            week_num = iso_cal[1] - i
+            year = iso_cal[0]
+            if week_num <= 0:
+                year -= 1
+                week_num += 52
+            wk = f"{year}-W{week_num:02d}"
+            count = sum(1 for log in all_logs if log["week_of"] == wk)
+            weekly_trend.append({"week_of": wk, "log_count": count})
+
+        return {
+            "current_week": current_week,
+            "this_week_log_count": len(this_week_logs),
+            "category_counts": category_counts,
+            "idea_total": len(all_ideas),
+            "idea_status_counts": status_counts,
+            "weekly_trend": weekly_trend,
+        }
 
 
 firestore_service = FirestoreService()

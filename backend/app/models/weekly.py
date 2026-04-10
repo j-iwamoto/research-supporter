@@ -35,3 +35,10 @@ class WeeklyReportResponse(WeeklyReportBase):
     edited_at: datetime | None = Field(default=None, description="最終編集日時")
 
     model_config = {"from_attributes": True}
+
+
+class WeeklyListResponse(BaseModel):
+    """週報一覧レスポンス"""
+
+    reports: list[WeeklyReportResponse]
+    total: int
