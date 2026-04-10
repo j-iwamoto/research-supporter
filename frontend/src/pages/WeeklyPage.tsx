@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { WeekSelector, getCurrentWeek } from "@/components/weekly/WeekSelector";
 import { WeeklyReport } from "@/components/weekly/WeeklyReport";
 import { useWeekly } from "@/hooks/useWeekly";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 export function WeeklyPage() {
+  usePageTitle("週報");
   const [weekOf, setWeekOf] = useState(getCurrentWeek);
   const { weeklyReport, loading, error, generateReport, fetchReport, updateReport } = useWeekly();
 
@@ -15,7 +17,7 @@ export function WeeklyPage() {
     await generateReport(weekOf);
   };
 
-  const handleUpdate = async (data: { thisWeek: string; nextWeek: string }) => {
+  const handleUpdate = async (data: { this_week: string; next_week: string }) => {
     await updateReport(weekOf, data);
   };
 

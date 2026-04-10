@@ -7,7 +7,7 @@ interface WeeklyReportProps {
   loading: boolean;
   error: string | null;
   onGenerate: () => Promise<void>;
-  onUpdate: (data: { thisWeek: string; nextWeek: string }) => Promise<void>;
+  onUpdate: (data: { this_week: string; next_week: string }) => Promise<void>;
 }
 
 export function WeeklyReport({ report, loading, error, onGenerate, onUpdate }: WeeklyReportProps) {
@@ -18,8 +18,8 @@ export function WeeklyReport({ report, loading, error, onGenerate, onUpdate }: W
 
   const handleEdit = () => {
     if (report) {
-      setThisWeek(report.thisWeek);
-      setNextWeek(report.nextWeek);
+      setThisWeek(report.this_week);
+      setNextWeek(report.next_week);
       setEditing(true);
     }
   };
@@ -30,7 +30,7 @@ export function WeeklyReport({ report, loading, error, onGenerate, onUpdate }: W
 
   const handleSave = async () => {
     try {
-      await onUpdate({ thisWeek, nextWeek });
+      await onUpdate({ this_week: thisWeek, next_week: nextWeek });
       setEditing(false);
     } catch {
       // エラーは useWeekly 側で処理済み
@@ -39,7 +39,7 @@ export function WeeklyReport({ report, loading, error, onGenerate, onUpdate }: W
 
   const handleCopy = async () => {
     if (!report) return;
-    const text = `【今週やったこと】\n${report.thisWeek}\n\n【来週やること】\n${report.nextWeek}`;
+    const text = `【今週やったこと】\n${report.this_week}\n\n【来週やること】\n${report.next_week}`;
     try {
       await navigator.clipboard.writeText(text);
       setCopySuccess(true);
@@ -158,20 +158,20 @@ export function WeeklyReport({ report, loading, error, onGenerate, onUpdate }: W
       <div>
         <h4 className="mb-2 text-sm font-medium text-muted-foreground">今週やったこと</h4>
         <div className="whitespace-pre-wrap rounded-md bg-muted/50 p-4 text-sm text-foreground">
-          {report.thisWeek}
+          {report.this_week}
         </div>
       </div>
 
       <div>
         <h4 className="mb-2 text-sm font-medium text-muted-foreground">来週やること</h4>
         <div className="whitespace-pre-wrap rounded-md bg-muted/50 p-4 text-sm text-foreground">
-          {report.nextWeek}
+          {report.next_week}
         </div>
       </div>
 
-      {report.editedAt && (
+      {report.edited_at && (
         <p className="text-xs text-muted-foreground">
-          最終編集: {new Date(report.editedAt).toLocaleString("ja-JP")}
+          最終編集: {new Date(report.edited_at).toLocaleString("ja-JP")}
         </p>
       )}
     </div>

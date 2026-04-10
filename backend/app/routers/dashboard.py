@@ -30,13 +30,15 @@ async def get_dashboard_summary(
     reports = await firestore_service.get_weekly_reports(user_id)
     latest_report = reports[0] if reports else None
 
+    # フロントエンドの DashboardSummary 型に合わせた camelCase キー
     return {
-        "current_week": dashboard_data["current_week"],
-        "this_week_log_count": dashboard_data["this_week_log_count"],
-        "category_counts": dashboard_data["category_counts"],
-        "idea_total": dashboard_data["idea_total"],
-        "idea_status_counts": dashboard_data["idea_status_counts"],
-        "weekly_trend": dashboard_data["weekly_trend"],
-        "latest_report": latest_report,
-        "suggestion": suggestion,
+        "totalLogsThisWeek": dashboard_data["this_week_log_count"],
+        "categoryCounts": dashboard_data["category_counts"],
+        "totalIdeas": dashboard_data["idea_total"],
+        "ideaStatusCounts": dashboard_data["idea_status_counts"],
+        "weeklyTrend": [
+            {"weekOf": w["week_of"], "count": w["log_count"]}
+            for w in dashboard_data["weekly_trend"]
+        ],
+        "aiSuggestion": suggestion,
     }

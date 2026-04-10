@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 
 interface User {
   uid: string;
@@ -16,22 +16,26 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user] = useState<User | null>({
+  const [user, setUser] = useState<User | null>({
     uid: "demo-user",
     email: "demo@example.com",
     displayName: "デモユーザー",
   });
   const [loading] = useState(false);
 
-  const login = async () => {
+  const login = useCallback(async () => {
     // TODO: Firebase Google認証を実装
-    console.log("login");
-  };
+    setUser({
+      uid: "demo-user",
+      email: "demo@example.com",
+      displayName: "デモユーザー",
+    });
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     // TODO: Firebase ログアウトを実装
-    console.log("logout");
-  };
+    setUser(null);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>

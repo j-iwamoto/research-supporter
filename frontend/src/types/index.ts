@@ -4,9 +4,9 @@ export interface Log {
   content: string;
   category: "実験" | "論文読み" | "コーディング" | "ミーティング" | "執筆" | "その他";
   tags: string[];
-  createdAt: string;
-  userId: string;
-  weekOf: string;
+  created_at: string;
+  user_id: string;
+  week_of: string;
 }
 
 /** アイデアメモ */
@@ -16,29 +16,29 @@ export interface Idea {
   description: string;
   tags: string[];
   status: "未着手" | "検討中" | "採用" | "却下";
-  relatedIdeas: string[];
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
+  related_ideas: string[];
+  created_at: string;
+  updated_at: string;
+  user_id: string;
 }
 
 /** 週報 */
 export interface WeeklyReport {
   id: string;
-  userId: string;
-  weekOf: string;
-  thisWeek: string;
-  nextWeek: string;
-  generatedAt: string;
-  editedAt: string | null;
+  user_id: string;
+  week_of: string;
+  this_week: string;
+  next_week: string;
+  generated_at: string;
+  edited_at: string | null;
 }
 
 /** ダッシュボードサマリー */
 export interface DashboardSummary {
   totalLogsThisWeek: number;
-  categoryCounts: Record<Log["category"], number>;
+  categoryCounts: Record<string, number>;
   totalIdeas: number;
-  ideaStatusCounts: Record<Idea["status"], number>;
+  ideaStatusCounts: Record<string, number>;
   weeklyTrend: {
     weekOf: string;
     count: number;

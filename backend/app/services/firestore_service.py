@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 
 from app.core.config import settings
 
+# 全カテゴリ定義（AIサービスの分類カテゴリと一致させる）
+ALL_CATEGORIES = ["実験", "論文読み", "コーディング", "ミーティング", "執筆", "その他"]
+
 
 def _calc_week_of(dt: datetime) -> str:
     """ISO週番号を YYYY-Www 形式で返す"""
@@ -139,6 +142,37 @@ class FirestoreService:
         doc = self._logs.get(log_id)
         if doc is None or doc["user_id"] != user_id:
             return None
+        return doc
+
+    async def update_log(self, user_id: str, log_id: str, data: dict) -> dict | None:
+        """日報を更新する（所有者チェック付き）
+
+        Args:
+            user_id: ユーザーID
+            log_id: ログID
+            data: 更新する内容（content, category, tags など）
+
+        Returns:
+            更新後のログ、見つからない or 所有者不一致の場合 None
+        """
+        # --- 本番用 Firestore ---
+        # doc_ref = self.db.collection("logs").document(log_id)
+        # doc = await doc_ref.get()
+        # if not doc.exists:
+        #     return None
+        # existing = doc.to_dict()
+        # if existing.get("user_id") != user_id:
+        #     return None
+        # await doc_ref.update(data)
+        # updated = await doc_ref.get()
+        # return updated.to_dict()
+
+        doc = self._logs.get(log_id)
+        if doc is None or doc["user_id"] != user_id:
+            return None
+        for key, value in data.items():
+            if value is not None:
+                doc[key] = value
         return doc
 
     async def delete_log(self, user_id: str, log_id: str) -> bool:
@@ -294,8 +328,8 @@ class FirestoreService:
         all_logs = [log for log in self._logs.values() if log["user_id"] == user_id]
         this_week_logs = [log for log in all_logs if log["week_of"] == current_week]
 
-        # カテゴリ別カウント
-        category_counts: dict[str, int] = {}
+        # カテゴリ別カウント（全カテゴリを0で初期化）
+        category_counts: dict[str, int] = {cat: 0 for cat in ALL_CATEGORIES}
         for log in this_week_logs:
             cat = log.get("category", "その他")
             category_counts[cat] = category_counts.get(cat, 0) + 1

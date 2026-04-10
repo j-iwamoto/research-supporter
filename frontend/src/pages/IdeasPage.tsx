@@ -1,9 +1,11 @@
 import { IdeaForm } from "@/components/ideas/IdeaForm";
 import { IdeaList } from "@/components/ideas/IdeaList";
 import { useIdeas } from "@/hooks/useIdeas";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import type { Idea } from "@/types";
 
 export function IdeasPage() {
+  usePageTitle("アイデア");
   const { ideas, loading, error, createIdea, updateIdea, deleteIdea } = useIdeas();
 
   const handleStatusChange = (id: string, status: Idea["status"]) => {

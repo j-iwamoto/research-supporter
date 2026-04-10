@@ -57,6 +57,28 @@ async def test_delete_log(client):
     assert resp.status_code == 404
 
 
+async def test_update_log(client):
+    """PUT /api/logs/{id} - 日報を編集すると再分類される"""
+    create_resp = await client.post("/api/logs", json={"content": "今日は実験データの解析を行った"})
+    log_id = create_resp.json()["id"]
+    old_category = create_resp.json()["category"]
+
+    # コーディング系のcontentに変更
+    resp = await client.put(f"/api/logs/{log_id}", json={"content": "コードをリファクタリングした"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["id"] == log_id
+    assert data["content"] == "コードをリファクタリングした"
+    assert data["category"] == "コーディング"
+    assert isinstance(data["tags"], list)
+
+
+async def test_update_log_not_found(client):
+    """PUT /api/logs/{不正ID} - 404"""
+    resp = await client.put("/api/logs/nonexistent-id", json={"content": "test"})
+    assert resp.status_code == 404
+
+
 async def test_get_log_not_found(client):
     """GET /api/logs/{不正ID} - 404"""
     resp = await client.get("/api/logs/nonexistent-id")

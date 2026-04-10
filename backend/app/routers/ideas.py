@@ -1,6 +1,6 @@
 """アイデアAPI"""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from app.core.auth import get_current_user
 from app.models.idea import IdeaCreate, IdeaListResponse, IdeaResponse, IdeaUpdate
@@ -88,9 +88,10 @@ async def update_idea(
 async def delete_idea(
     idea_id: str,
     current_user: dict = Depends(get_current_user),
-) -> None:
+) -> Response:
     """アイデアを削除する"""
     user_id: str = current_user["uid"]
     deleted = await firestore_service.delete_idea(user_id, idea_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Idea not found")
+    return Response(status_code=204)

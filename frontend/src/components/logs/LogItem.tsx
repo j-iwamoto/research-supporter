@@ -57,7 +57,7 @@ export function LogItem({ log, onDelete }: LogItemProps) {
             ))}
 
             <span className="ml-auto text-xs text-muted-foreground">
-              {formatDate(log.createdAt)}
+              {formatDate(log.created_at)}
             </span>
           </div>
         </div>

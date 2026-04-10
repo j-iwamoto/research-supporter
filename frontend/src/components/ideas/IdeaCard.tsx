@@ -66,14 +66,14 @@ export function IdeaCard({ idea, onStatusChange, onDelete }: IdeaCardProps) {
               </span>
             ))}
 
-            {idea.relatedIdeas.length > 0 && (
+            {idea.related_ideas.length > 0 && (
               <span className="text-xs text-muted-foreground">
-                関連: {idea.relatedIdeas.length}件
+                関連: {idea.related_ideas.length}件
               </span>
             )}
 
             <span className="ml-auto text-xs text-muted-foreground">
-              {formatDate(idea.createdAt)}
+              {formatDate(idea.created_at)}
             </span>
           </div>
         </div>
