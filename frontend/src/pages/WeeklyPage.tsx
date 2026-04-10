@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { WeekSelector, getCurrentWeek } from "@/components/weekly/WeekSelector";
 import { WeeklyReport } from "@/components/weekly/WeeklyReport";
 import { useWeekly } from "@/hooks/useWeekly";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 export function WeeklyPage() {
+  usePageTitle("週報");
   const [weekOf, setWeekOf] = useState(getCurrentWeek);
   const { weeklyReport, loading, error, generateReport, fetchReport, updateReport } = useWeekly();
 

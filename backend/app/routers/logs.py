@@ -1,6 +1,6 @@
 """日報API"""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from app.core.auth import get_current_user
 from app.models.log import LogCreate, LogListResponse, LogResponse
@@ -66,13 +66,48 @@ async def get_log(
     return LogResponse(**doc)
 
 
+@router.put("/{log_id}", response_model=LogResponse)
+async def update_log(
+    log_id: str,
+    log_in: LogCreate,
+    current_user: dict = Depends(get_current_user),
+) -> LogResponse:
+    """日報を編集する（content更新→再分類）
+
+    1. 既存ログの存在を確認
+    2. AIで再分類
+    3. Firestoreを更新
+    """
+    user_id: str = current_user["uid"]
+
+    # 存在チェック
+    existing = await firestore_service.get_log(user_id, log_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail="Log not found")
+
+    # 新しいcontentでAI再分類
+    classification = await ai_service.classify_log(log_in.content)
+
+    # 更新データ
+    update_data = {
+        "content": log_in.content,
+        "category": classification["category"],
+        "tags": classification["tags"],
+    }
+    updated = await firestore_service.update_log(user_id, log_id, update_data)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Log not found")
+    return LogResponse(**updated)
+
+
 @router.delete("/{log_id}", status_code=204)
 async def delete_log(
     log_id: str,
     current_user: dict = Depends(get_current_user),
-) -> None:
+) -> Response:
     """日報を削除する"""
     user_id: str = current_user["uid"]
     deleted = await firestore_service.delete_log(user_id, log_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Log not found")
+    return Response(status_code=204)
