@@ -9,7 +9,7 @@ interface UseWeeklyReturn {
   error: string | null;
   generateReport: (weekOf: string) => Promise<void>;
   fetchReport: (weekOf: string) => Promise<void>;
-  updateReport: (weekOf: string, data: { thisWeek: string; nextWeek: string }) => Promise<void>;
+  updateReport: (weekOf: string, data: { this_week: string; next_week: string }) => Promise<void>;
   fetchReports: () => Promise<void>;
 }
 
@@ -25,7 +25,7 @@ export function useWeekly(): UseWeeklyReturn {
     try {
       const data = await apiFetch<WeeklyReport>("/api/weekly/generate", {
         method: "POST",
-        body: JSON.stringify({ weekOf }),
+        body: JSON.stringify({ week_of: weekOf }),
       });
       setWeeklyReport(data);
     } catch (err) {
@@ -44,15 +44,20 @@ export function useWeekly(): UseWeeklyReturn {
       const data = await apiFetch<WeeklyReport>(`/api/weekly/${weekOf}`);
       setWeeklyReport(data);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "週報の取得に失敗しました";
-      setError(message);
-      setWeeklyReport(null);
+      // 404 = まだ週報が生成されていない（正常）
+      const message = err instanceof Error ? err.message : "";
+      if (message.includes("404")) {
+        setWeeklyReport(null);
+      } else {
+        setError(message || "週報の取得に失敗しました");
+        setWeeklyReport(null);
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const updateReport = useCallback(async (weekOf: string, data: { thisWeek: string; nextWeek: string }) => {
+  const updateReport = useCallback(async (weekOf: string, data: { this_week: string; next_week: string }) => {
     setLoading(true);
     setError(null);
     try {
@@ -74,8 +79,8 @@ export function useWeekly(): UseWeeklyReturn {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<WeeklyReport[]>("/api/weekly");
-      setWeeklyReports(data);
+      const data = await apiFetch<{ reports: WeeklyReport[]; total: number }>("/api/weekly");
+      setWeeklyReports(data.reports);
     } catch (err) {
       const message = err instanceof Error ? err.message : "週報一覧の取得に失敗しました";
       setError(message);

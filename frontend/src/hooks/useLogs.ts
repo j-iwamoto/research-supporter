@@ -20,8 +20,8 @@ export function useLogs(): UseLogsReturn {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<Log[]>("/api/logs");
-      setLogs(data);
+      const data = await apiFetch<{ logs: Log[]; total: number }>("/api/logs");
+      setLogs(data.logs);
     } catch (err) {
       const message = err instanceof Error ? err.message : "日報の取得に失敗しました";
       setError(message);

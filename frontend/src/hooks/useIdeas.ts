@@ -26,8 +26,8 @@ export function useIdeas(): UseIdeasReturn {
       if (tag) params.set("tag", tag);
       const query = params.toString();
       const path = query ? `/api/ideas?${query}` : "/api/ideas";
-      const data = await apiFetch<Idea[]>(path);
-      setIdeas(data);
+      const data = await apiFetch<{ ideas: Idea[]; total: number }>(path);
+      setIdeas(data.ideas);
     } catch (err) {
       const message = err instanceof Error ? err.message : "アイデアの取得に失敗しました";
       setError(message);

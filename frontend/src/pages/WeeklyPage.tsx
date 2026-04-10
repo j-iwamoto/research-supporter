@@ -15,7 +15,7 @@ export function WeeklyPage() {
     await generateReport(weekOf);
   };
 
-  const handleUpdate = async (data: { thisWeek: string; nextWeek: string }) => {
+  const handleUpdate = async (data: { this_week: string; next_week: string }) => {
     await updateReport(weekOf, data);
   };
 

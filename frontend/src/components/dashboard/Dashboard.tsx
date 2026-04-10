@@ -50,19 +50,19 @@ export function Dashboard({ summary, loading, error }: DashboardProps) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatsCard
           title="今週の記録数"
-          value={summary.totalLogsThisWeek}
+          value={summary.totalLogsThisWeek ?? 0}
           subtext="件の研究活動"
           icon={FileText}
         />
         <StatsCard
           title="アイデア数"
-          value={summary.totalIdeas}
-          subtext={`採用: ${summary.ideaStatusCounts["採用"] ?? 0}件`}
+          value={summary.totalIdeas ?? 0}
+          subtext={`採用: ${summary.ideaStatusCounts?.["採用"] ?? 0}件`}
           icon={Lightbulb}
         />
         <StatsCard
           title="カテゴリ数"
-          value={Object.values(summary.categoryCounts).filter((c) => c > 0).length}
+          value={Object.values(summary.categoryCounts ?? {}).filter((c) => c > 0).length}
           subtext="種類の活動"
           icon={BarChart3}
         />
@@ -72,7 +72,7 @@ export function Dashboard({ summary, loading, error }: DashboardProps) {
       <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
         <h3 className="mb-3 text-sm font-medium text-foreground">カテゴリ別記録数</h3>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {Object.entries(summary.categoryCounts).map(([category, count]) => (
+          {Object.entries(summary.categoryCounts ?? {}).map(([category, count]) => (
             <div
               key={category}
               className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2"
@@ -87,7 +87,7 @@ export function Dashboard({ summary, loading, error }: DashboardProps) {
       </div>
 
       {/* 週次推移チャート */}
-      {summary.weeklyTrend.length > 0 && (
+      {(summary.weeklyTrend ?? []).length > 0 && (
         <WeeklyChart data={summary.weeklyTrend} />
       )}
 
