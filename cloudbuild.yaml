@@ -1,0 +1,94 @@
+substitutions:
+  _REGION: asia-northeast1
+  _BACKEND_IMAGE: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/research-manager/backend
+  _FRONTEND_IMAGE: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/research-manager/frontend
+
+steps:
+  # ===== Frontend =====
+  - id: frontend-install
+    name: node:20
+    dir: frontend
+    entrypoint: npm
+    args: ["ci"]
+
+  - id: frontend-build
+    name: node:20
+    dir: frontend
+    entrypoint: npm
+    args: ["run", "build"]
+    waitFor: ["frontend-install"]
+
+  - id: frontend-docker-build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_FRONTEND_IMAGE}:${SHORT_SHA}
+      - -t
+      - ${_FRONTEND_IMAGE}:latest
+      - .
+    dir: frontend
+    waitFor: ["frontend-build"]
+
+  - id: frontend-docker-push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_FRONTEND_IMAGE}
+    waitFor: ["frontend-docker-build"]
+
+  - id: frontend-deploy
+    name: gcr.io/cloud-builders/gcloud
+    args:
+      - run
+      - deploy
+      - research-manager-frontend
+      - --image=${_FRONTEND_IMAGE}:${SHORT_SHA}
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=8080
+    waitFor: ["frontend-docker-push"]
+
+  # ===== Backend =====
+  - id: backend-docker-build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_BACKEND_IMAGE}:${SHORT_SHA}
+      - -t
+      - ${_BACKEND_IMAGE}:latest
+      - .
+    dir: backend
+
+  - id: backend-docker-push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_BACKEND_IMAGE}
+    waitFor: ["backend-docker-build"]
+
+  - id: backend-deploy
+    name: gcr.io/cloud-builders/gcloud
+    args:
+      - run
+      - deploy
+      - research-manager-backend
+      - --image=${_BACKEND_IMAGE}:${SHORT_SHA}
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=8080
+    waitFor: ["backend-docker-push"]
+
+images:
+  - ${_FRONTEND_IMAGE}:${SHORT_SHA}
+  - ${_FRONTEND_IMAGE}:latest
+  - ${_BACKEND_IMAGE}:${SHORT_SHA}
+  - ${_BACKEND_IMAGE}:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
