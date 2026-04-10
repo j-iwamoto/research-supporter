@@ -2,7 +2,7 @@
 export interface Log {
   id: string;
   content: string;
-  category: "実験" | "論文読み" | "コーディング" | "ミーティング" | "その他";
+  category: "実験" | "論文読み" | "コーディング" | "ミーティング" | "執筆" | "その他";
   tags: string[];
   createdAt: string;
   userId: string;

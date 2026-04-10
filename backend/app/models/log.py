@@ -13,10 +13,10 @@ class LogBase(BaseModel):
     tags: list[str] = Field(default_factory=list, description="タグ一覧")
 
 
-class LogCreate(LogBase):
-    """日報作成リクエスト"""
+class LogCreate(BaseModel):
+    """日報作成リクエスト（category/tagsはAIが自動付与）"""
 
-    pass
+    content: str = Field(..., description="日報の本文")
 
 
 class LogResponse(LogBase):
